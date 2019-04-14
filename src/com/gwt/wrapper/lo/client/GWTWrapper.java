@@ -1,14 +1,19 @@
 package com.gwt.wrapper.lo.client;
 
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.ScriptElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.UIObject;
 
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
@@ -55,7 +60,33 @@ public class GWTWrapper implements EntryPoint {
 			}
 		}));
 
-		
+		RootPanel.get().add(new Button("PassCustomData", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				JSONObject obj = new JSONObject();
+				obj.put("name", new JSONString("John Doe"));
+				obj.put("email", new JSONString("email@example.com"));
+				obj.put("whatever1", new JSONString("Anything here"));
+				customData(obj.getJavaScriptObject());
+			}
+
+		}));
+
+		RootPanel.get().add(new Button("Make header sensitive", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				addSensitiveStyling(DOM.getElementById("h1"), true);
+			}
+
+		}));
+
+		RootPanel.get().add(new Button("Away", new ClickHandler() {
+			@Override
+			public void onClick(ClickEvent event) {
+				triggerAwayFrom();
+			}
+
+		}));
 
 		onAgentUnavailable(new GWTWrapper.Handler() {
 
@@ -73,6 +104,30 @@ public class GWTWrapper implements EntryPoint {
 
 			}
 		});
+		onChatEndedByOperator(new GWTWrapper.Handler() {
+			@Override
+			public void onChange() {
+				Window.alert("lo_chat_ended_by_operator");
+
+			}
+		});
+
+		onChatEndedByVisitor(new GWTWrapper.Handler() {
+			@Override
+			public void onChange() {
+				Window.alert("lo_chat_ended_by_visitor");
+
+			}
+		});
+
+		onChatInitiated(new GWTWrapper.Handler() {
+			@Override
+			public void onChange() {
+				Window.alert("lo_chat_ended_by_visitor");
+
+			}
+		});
+
 		initializeScripts();
 
 	}
@@ -89,6 +144,14 @@ public class GWTWrapper implements EntryPoint {
 
 	private native void addTag(String tagName, boolean star, boolean overwrite) /*-{
 		$wnd._loq.push([ "tag", tagName, star, overwrite ]);
+	}-*/;
+
+	private native void customData(JavaScriptObject obj)/*-{
+		$wnd._loq.push([ "custom", obj ]);
+	}-*/;
+
+	private native void triggerAwayFrom()/*-{
+		$wnd.LO.away_form();
 	}-*/;
 
 	private void initializeScripts() {
@@ -112,9 +175,31 @@ public class GWTWrapper implements EntryPoint {
 		});
 	}-*/;
 
+	private native void onChatInitiated(Handler handler) /*-{
+		$wnd.lo_chat_initiated = $entry(function(asked_to_chat) {
+			console.log('_lo_chat_initiated ');
+			console.log(asked_to_chat);
+			handler.@com.gwt.wrapper.lo.client.GWTWrapper.Handler::onChange()();
+		});
+	}-*/;
+
 	private native void onAgentAvailable(Handler handler) /*-{
 		$wnd.lo_chat_agent_available = $entry(function() {
 			console.log('_lo_chat_agent_available');
+			handler.@com.gwt.wrapper.lo.client.GWTWrapper.Handler::onChange()();
+		});
+	}-*/;
+
+	private native void onChatEndedByOperator(Handler handler) /*-{
+		$wnd.lo_chat_ended_by_operator = $entry(function() {
+			console.log('_lo_chat_ended_by_operator ');
+			handler.@com.gwt.wrapper.lo.client.GWTWrapper.Handler::onChange()();
+		});
+	}-*/;
+
+	private native void onChatEndedByVisitor(Handler handler) /*-{
+		$wnd.lo_chat_ended_by_visitor = $entry(function() {
+			console.log('_lo_chat_ended_by_visitor  ');
 			handler.@com.gwt.wrapper.lo.client.GWTWrapper.Handler::onChange()();
 		});
 	}-*/;
@@ -130,6 +215,14 @@ public class GWTWrapper implements EntryPoint {
 
 	public interface Handler {
 		public void onChange();
+	}
+
+	public static void addSensitiveStyling(UIObject uiObject, boolean isSensitive) {
+		uiObject.addStyleName(isSensitive ? "LoSensitive" : "LoNotSensitive");
+	}
+
+	public static void addSensitiveStyling(Element element, boolean isSensitive) {
+		element.addClassName(isSensitive ? "LoSensitive" : "LoNotSensitive");
 	}
 
 }
